@@ -364,6 +364,28 @@
     }
   }
 
+  async function updateFromYahoo() {
+    byId("returns-message").textContent = "กำลังดึงข้อมูลจริงจาก Yahoo Finance...";
+    try {
+      const response = await request("/api/stocks/yahoo/", {
+        method: "POST",
+        body: JSON.stringify({ symbols: state.stocks.map((stock) => stock.symbol) }),
+      });
+      for (const [symbol, value] of Object.entries(response.updated)) {
+        const stock = state.stocks.find((item) => item.symbol === symbol);
+        if (stock) stock.annual_return = value;
+      }
+      renderReturns();
+      renderStockOptions(byId("stock-search").value);
+      byId("returns-message").textContent = response.message;
+      showToast(response.failed.length
+        ? `อัปเดตสำเร็จ ${Object.keys(response.updated).length} หุ้น`
+        : "อัปเดตผลตอบแทนจาก Yahoo Finance เรียบร้อย");
+    } catch (error) {
+      byId("returns-message").textContent = error.message;
+    }
+  }
+
   function bindEvents() {
     const search = byId("stock-search");
     search.addEventListener("focus", () => byId("stock-options").classList.remove("hidden"));
@@ -390,7 +412,7 @@
     });
     byId("optimizer-form").addEventListener("submit", startOptimization);
     byId("save-returns").addEventListener("click", saveReturns);
-    byId("yahoo-button").addEventListener("click", () => showToast("ยังไม่เชื่อมต่อ Yahoo Finance — โปรดกรอกและบันทึกผลตอบแทนด้วยตนเอง"));
+    byId("yahoo-button").addEventListener("click", updateFromYahoo);
     byId("recalculate-button").addEventListener("click", () => {
       byId("calculator").scrollIntoView({ behavior: "smooth" });
       byId("results-panel").classList.add("hidden");

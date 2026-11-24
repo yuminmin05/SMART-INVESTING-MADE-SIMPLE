@@ -1,0 +1,415 @@
+The 14th Asia Undergraduate Conference on Computing (AUC²) 2026
+
+
+ชาญฉลาดเพื่อการจัดการการลงทุนแบบเฉลี่ยต้นทุนโดยใช้ Genetic Algorithms
+(Intelligent Dollar-Cost Averaging Investment Management Using Genetic Algorithms)
+
+
+บทคัดย่อ
+
+การลงทุนแบบถัวเฉลี่ยต้นทุน (Dollar-Cost Averaging: DCA) เป็นกลยุทธ์การลงทุนที่ช่วยสร้างวินัยและลดแรงกดดันในการตัดสินใจจับจังหวะตลาด โดยกำหนดให้เงินจำนวนหนึ่งถูกนำไปลงทุนเป็นงวด อย่างไรก็ตาม กลยุทธ์นี้โดยพื้นฐานตอบคำถามเกี่ยวกับเวลาและจำนวนเงินต่องวดเป็นหลัก แต่ไม่ได้บอกโดยตรงว่าควรจัดสรรเงินงวดละเท่าใดให้กับหลักทรัพย์แต่ละตัวในพอร์ต งานวิจัยนี้จึงพัฒนาระบบเว็บชื่อ “Smart DCA” ด้วยภาษา Python และเฟรมเวิร์ก Django เพื่อช่วยผู้ใช้งานเลือกหุ้นและกำหนดสัดส่วนการลงทุนรายเดือนด้วยเครื่องมือค้นหาเชิงวิวัฒนาการชื่อขั้นตอนวิธีเชิงพันธุกรรม (Genetic Algorithm: GA)
+
+ระบบเข้ารหัสการจัดสรรพอร์ตด้วยโครโมโซมแบบเวกเตอร์ค่าจริงที่บรรจุน้ำหนักของหุ้นแต่ละตัวหนึ่งยีนต่อหนึ่งตัว น้ำหนักทั้งหมดย้ายกลับสู่ช่วง 0–100% หลังแต่ละขั้นตอนและมีผลรวมน้ำหนักเท่ากับ 100% การปรับสเกลและ normalization ในโค้ดจำกัดน้ำหนักหนึ่งยีนสูงสุดไม่เกิน 60% ฟังก์ชันความเหมาะสมคำนวณมูลค่าอนาคตของเงินลงทุนแบบ Dollar-Cost Averaging โดยสมมติว่าผู้ลงทุนวางเงินต้นงวดในระยะเวลา 1, 5 และ 10 ปี ผลตอบแทนรายปีของหุ้นใช้ effective annual percentage return คงที่ซึ่งผู้ใช้แก้ไขในหน้าเว็บได้ และบันทึกในฐานข้อมูล SQLite ผ่านโมเดล StockReturn
+
+โครงสร้างของระบบแบ่งเป็นชั้นหน้าเว็บ ชั้น API และชั้นคำนวณ หน้าเว็บใช้ HTML5, CSS3, JavaScript และ Chart.js รับข้อมูลจากผู้ใช้ รวมถึงแสดงน้ำหนักพอร์ต กราฟโดนัทและกราฟเปรียบเทียบเงินลงทุนกับมูลค่าอนาคต Django รับคำขอการคำนวณผ่าน REST-like endpoint และดำเนินการคำนวณใน background thread เมื่อผลคำนวณเสร็จหน้าเว็บจะอ่านสถานะงานผ่าน polling ตัวคำนวณ GA ทำงานด้วย Tournament Selection, Simulated Binary Crossover (SBX), Gaussian Mutation และ Elitism และเปิดให้กำหนด seed เพื่อทำซ้ำผลการสุ่มได้
+
+ระบบรองรับการอัปเดตผลตอบแทนรายปีจาก Yahoo Finance โดยแปลงสัญลักษณ์หุ้นภายใน เช่น ADVANC ให้เป็น ADVANC.BK ก่อนส่งคำขอไปยัง Yahoo Finance Chart API จากนั้นคำนวณอัตราการเปลี่ยนแปลงระหว่างราคาปิดแรกและราคาปิดสุดท้ายในช่วงข้อมูล 1 วันต่อจุดเป็น 1 ปี ค่าเหล่านี้ถูกบันทึกลงฐานข้อมูลและนำมาใช้ในการคำนวณพอร์ต รายชื่อหุ้น 50 ตัวในโค้ดเป็นรายการคงที่ ไม่ได้เชื่อมรายการนี้กับข้อมูลสมาชิก SET50 ล่าสุดแบบอัตโนมัติ
+
+บทความนี้ประเมินโครงสร้างระบบจากโค้ดที่พัฒนาและชุดทดสอบ Django โดยตรง แต่ไม่ได้อ้างว่าเป็นผลการทดลองย้อนหลังหรือผลรายได้จริง เนื่องจากตัวเพิ่มประสิทธิภาพปัจจุบันพิจารณา Future Value เท่านั้น ยังไม่มีการคำนวณความผันผวน Sharpe Ratio, MVO, ค่าธรรมเนียม, ภาษี หรือความเสี่ยงหาง ตัวเลขจากการคำนวณจริงจะต้องรันและบันทึกพร้อม seed และพารามิเตอร์ก่อนรายงาน ส่วนข้อมูลในบทความต้นฉบับเกี่ยวกับ Sharpe Ratio, MVO, กลยุทธ์เท่ากัน และการคาดการณ์ย้อนหลังจำนวน 3 ปี หากยังไม่มีโค้ดหรือผลรันที่รองรับควรลบหรือระบุเป็นแนวต่อยอดที่ยังไม่ได้ดำเนินการ
+
+คำสำคัญ -- การลงทุนแบบถัวเฉลี่ยต้นทุน, ขั้นตอนวิธีเชิงพันธุกรรม, การจัดสรรพอร์ต, SET50, Django, Yahoo Finance
+
+
+ABSTRACT
+
+Dollar-Cost Averaging (DCA) supports disciplined periodic investing, but a DCA rule alone does not determine how each monthly contribution should be divided among multiple stocks. This paper describes the implementation of Smart DCA, a Django-based web application that applies a Genetic Algorithm (GA) to search for portfolio weights. Each chromosome represents a real-valued allocation vector whose weights sum to 100%; the implementation constrains each stock to a maximum weight of 60%.
+
+The objective function is the beginning-of-month future value of monthly DCA contributions over 1-, 5-, and 10-year horizons. Fixed effective annual stock returns are entered or edited through the web interface and stored in SQLite. The system consists of a responsive browser interface, Django HTTP APIs, a background worker thread, and a GA implementation located in portfolio/optimizer.py. The browser interface uses Fetch API and Chart.js, while the calculation model uses Python math and random modules without relying on a GA library.
+
+The GA uses Tournament Selection, Simulated Binary Crossover (SBX), Gaussian Mutation, and elitism. The web interface provides default values of 60 chromosomes, 100 generations, crossover probability 0.90, mutation probability 0.10, mutation sigma 0.05, SBX eta_c 20, tournament size 3, and elite size 2. An optional seed makes stochastic runs reproducible.
+
+The application converts internal symbols such as ADVANC and AOT into Yahoo Finance tickers such as ADVANC.BK before retrieving one year of chart data. It calculates a simple annual percentage change from the first and last available closing prices. The 50-symbol stock list is a fixed application list and does not automatically verify present SET50 membership. Risk-adjusted metrics, historical backtesting, dividends, taxes, fees, and transaction costs are not included in the current optimizer. Accordingly, reported values must be based on explicit real execution results, seeds, inputs, and assumptions.
+
+Keywords -- Dollar-Cost Averaging, Genetic Algorithm, Portfolio Allocation, SET50, Django, Yahoo Finance
+
+
+1. บทนำ
+
+1.1 ภูมิหลังของปัญหา
+
+การลงทุนแบบถัวเฉลี่ยต้นทุน (Dollar-Cost Averaging: DCA) คือแนวทางลงทุนแบบระเบียบโดยแบ่งเงินออมออกเป็นงวดเท่าเดิมและนำไปซื้อสินทรัพย์ตามช่วงเวลาที่กำหนด เช่น รายเดือน การลงทุนในลักษณะนี้ช่วยลดแรงกดดันในการคาดเดาจุดต่ำสุดหรือจุดสูงสุดของตลาดและสนับสนุนวินัยการลงทุนระยะยาว อย่างไรก็ตาม การกำหนดงวดลงทุนเท่าเดิมยังไม่ได้ตอบคำถามว่าแต่ละงวดควรลงทุนในหุ้นตัวใดและควรแบ่งสัดส่วนเท่าใด
+
+ผู้ลงทุนอาจเลือกหุ้นเพียงตัวเดียว หรือลงทุนเท่ากันทุกตัวเป็น Equal Weight Portfolio ทั้งสองแนวทางอาจไม่สอดคล้องกับสมมติฐานผลตอบแทนที่กำหนดไว้ของหุ้นแต่ละตัว งานวิจัยนี้จึงเสนอระบบคำนวณสัดส่วนจากผลตอบแทนรายปีของหุ้นที่เลือก โดยผลตอบแทนของพอร์ตคือผลรวมถ่วงน้ำหนักซึ่งคิดจากน้ำหนักยีนของโครโมโซม
+
+ปัญหาการค้นหาสัดส่วนเป็นปัญหา continuous optimization ภายใต้ข้อจำกัดน้ำหนักไม่ติดลบ ผลรวมเท่ากับ 100% และน้ำหนักสูงสุดต่อหุ้น GA ถูกเลือกเพราะเป็นวิธีค้นหาแบบสุ่มและวิวัฒนาการที่ไม่ต้องคำนวณอนุพันธ์ของฟังก์ชันเป้าหมาย จึงเหมาะกับการแสดงกระบวนการผสม การกลายพันธุ์และการลู่เข้าสู่คำตอบ โดยเฉพาะในโครงงานระดับวิศวกรรมซอฟต์แวร์
+
+1.2 บทบาทและขอบเขตของระบบ
+
+ระบบ Smart DCA มีบทบาทเป็นเครื่องมือวางแผนแบบจำลอง ไม่ใช่ระบบซื้อขายหรือแนะนำการลงทุน มีหน้าที่รับชื่อหุ้น เงินลงทุนรายเดือน ผลตอบแทนรายปี และพารามิเตอร์ GA จากผู้ใช้ จากนั้นคำนวณมูลค่าอนาคตในระยะ 1, 5 และ 10 ปี ผลลัพธ์ประกอบด้วยน้ำหนักของหุ้นแต่ละตัว เงินลงทุนต่อเดือนตามน้ำหนัก เงินลงทุนรวม มูลค่าอนาคต กำไรประมาณ และพอร์ตที่ทำให้มูลค่าสูงสุดในงวดนั้น
+
+ระบบเก็บผลตอบแทนรายปีและสถานะการคำนวณในรูปแบบต่างกัน ผลตอบแทนหุ้นเก็บถาวรใน SQLite ส่วน JOBS เก็บเป็น dictionary ในหน่วยความจำของ Django process เพื่อใช้ polling แบบ daemon thread ในการพัฒนาหรือการใช้งานด้วย worker เดียว ระบบนี้ไม่ใช้ฐานข้อมูลคิวหรือ Redis และไม่รองรับการทำงานแบบหลาย process อย่างสมบูรณ์
+
+โครงขอบเขตยังมีข้อจำกัดชัดเจนคือไม่มีราคาอย่างต่อเนื่องตามตลาดทั้งช่วงจำลอง ไม่มีการคำนวณ dividend หรือ corporate action เป็นรายงวด และไม่มีการจำลองความผันผวนแบบ stochastic ตัวคำนวณถือว่าผลตอบแทนรายปีคงที่ตลอดระยะเวลา
+
+1.3 วัตถุประสงค์ของงานวิจัย
+
+งานวิจัยมีวัตถุประสงค์ดังนี้
+
+1. พัฒนาระบบเว็บสำหรับวางแผน DCA ที่ผู้ใช้สามารถเลือกหุ้น กำหนดเงินลงทุนรายเดือน และปรับผลตอบแทนรายปีได้
+2. ออกแบบโครโมโซมเพื่อแทนสัดส่วนพอร์ต โดยน้ำหนักรวมเท่ากับ 100% และจำกัดไม่เกิน 60% ต่อหุ้น
+3. ประยุกต์ GA ในการค้นหาเวกเตอร์น้ำหนักที่ทำให้ Future Value สูงสุดภายใต้สมมติฐาน effective annual return
+4. คำนวณและเปรียบเทียบผลสำหรับระยะเวลา 1, 5 และ 10 ปี
+5. เชื่อม Django API กับฐานข้อมูล SQLite และแสดงผลผ่านกราฟและตาราง
+6. เพิ่มการดึงข้อมูลปิดจาก Yahoo Finance โดยใช้สัญลักษณ์ Yahoo Finance เป็น SYMBOL.BK
+7. ตรวจสอบสูตรคำนวณ ตัวแปรนำเข้า การทำซ้ำได้ของ GA และ API ด้วยชุดทดสอบ Django
+8. ระบุข้อจำกัด สมมติฐาน และส่วนที่ยังต้องขยายต่อให้ชัดเจนในเอกสารวิชาการ
+
+
+2. การทบทวนวรรณกรรม
+
+2.1 ทฤษฎี Dollar-Cost Averaging
+
+DCA เป็นกลยุทธ์ที่ผู้ลงทุนวางเงินลงทุนคงที่ตามช่วงเวลาที่กำหนด ไม่ว่าจะมีสถานะความผันผวนของตลาดในงวดนั้นอย่างไร หลักการนี้ช่วยลดความเสียเปรียบจากการพยายามจับจังหวะเข้าตลาดโดยอาศัยการคาดการณ์ระยะสั้น จุดประสงค์หลักคือการสะสมสินทรัพย์อย่างสม่ำเสมอและสร้างวินัยการลงทุน
+
+ในเชิงคณิตศาสตร์ DCA ที่เงินแต่ละงวดนำไปลงทุนต้นงวดสามารถจัดรูปเป็นอนุกรมแบบ Annuity Due สำหรับอัตราผลตอบแทนรายงวด r_m ถ้ามี n งวดและเงินลงทุนแต่ละงวดเท่ากับ PMT มูลค่าอนาคตคือ
+
+FV = PMT × (((1 + r_m)^n - 1)/r_m) × (1 + r_m)
+
+การคูณด้วย 1 + r_m เป็นความแตกต่างจากอนุกรม Ordinary Annuity ในงานนี้ระบบสมมติว่าการลงทุนเริ่มต้นเดือนแรกทันที จึงใช้ Annuity Due สำหรับมาตรฐาน DCA
+
+กรณี r_m = 0 สูตรอนุกรมมีอนันต์ขนาดศูนย์พจน์ จึงใช้ผลที่โค้ดกำหนดคือ PMT × n โดยตรง ถ้า effective annual return เป็น -100% มูลค่าอนาคตเป็นศูนย์ และถ้าเกินช่วงที่โค้ดรองรับจะเกิด ValueError เพื่อป้องกันการคำนวณผลลัพธ์ที่ไม่มีความหมาย
+
+2.2 การจัดสรรพอร์ต
+
+การจัดสรรพอร์ตเป็นกระบวนการเลือกน้ำหนักของสินทรัพย์ต่างๆ เพื่อให้ค่าสมรรถนะตามจุดประสงค์ดีที่สุด หากวางเป้าหมายเป็นมูลค่าอนาคตและสมมติผลตอบแทนรายปีคงที่ ผลตอบแทนพอร์ตจะเป็นผลรวมเชิงเส้น
+
+R_p = Σw_iR_i
+
+ซึ่ง R_i คือ effective annual return ของหุ้น i และ w_i คือน้ำหนักที่เลือก โดยสมมติว่า Σw_i = 1 และ 0 ≤ w_i ≤ 0.60 สำหรับแบบจำลองปัจจุบัน เนื่องจากโค้ดไม่ได้คืน MVO หรือ risk measure การหาค่าที่ทำให้ Future Value สูงสุดจะใช้ผลตอบแทนพอร์ตที่คำนวณจากสมมติฐานผู้ใช้ ผลจึงอาจเน้นหุ้นที่มีผลตอบแทนสมมติฐานสูงสุดสูงกว่าตำแหน่งพอร์ตที่ลดความเสี่ยง
+
+2.3 Genetic Algorithm
+
+GA เป็นวิธีการค้นหาที่จำลองกระบวนการวิวัฒนาการ ประกอบด้วยประชากรเริ่มต้นของคำตอบ ฟังก์ชันความเหมาะสม การคัดเลือก การผสมและการกลายพันธุ์ แต่ละรุ่นจะเลือกคำตอบที่ดีมาเป็นพ่อแม่พันธุ์ สร้างคำตอบลูกผสมและนำบางส่วนของคำตอบดีที่สุดเข้าสู่รุ่นถัดไป
+
+งานนี้ใช้โครโมโซมเป็นเวกเตอร์น้ำหนักที่มีขนาดเท่ากับจำนวนหุ้นที่เลือก การหารูปแบบนี้ทำให้แต่ละตัวแทนพอร์ตที่ครบเงื่อนไขงบประมาณหนึ่งชุด Fitness ของแต่ละโครโมโซมเป็น FV ที่คำนวณจากผลตอบแทนถ่วงน้ำหนัก
+
+จุดเด่นของ GA คือไม่จำเป็นต้องมีฟังก์ชันในรูปแบบเชิงอนุพันธ์และสามารถปรับตัวดำเนินการให้รองรับข้อจำกัดได้ จุดอ่อนคือเป็นวิธี stochastic ซึ่งต้องกำหนด seed หากต้องการทำซ้ำผล และไม่มีการรับประกันว่าจะแข่งขันกับ analytical optimum ทุกกรณี
+
+2.4 ข้อจำกัดในวรรณกรรมต้นฉบับที่ไม่ตรงกับโค้ด
+
+เอกสารต้นฉบับฉบับ PDF มีเนื้อหาเกี่ยวกับ data 3 ปี, daily return, covariance matrix, MVO, Sharpe Ratio และตัวเลขเปรียบเทียบเชิงปริมาณ อย่างไรก็ตาม โค้ดปัจจุบันไม่มีฟังก์ชันคำนวณ covariance, ไม่มี Sharpe Ratio และไม่มี optimizer แบบ Markowitz นอกจากนี้สูตรที่ดึงผ่าน Yahoo ใช้ช่วง 1 ปีและราคา close อย่างง่าย จึงไม่สมเหตุสมผลที่จะรายงานข้อมูลแนวโน้ม 3 ปีหรือผล Sharpe เป็นผลการทดลองของโค้ดเดิม
+
+เพื่อความถูกต้องงานวิจัยควรเก็บหัวข้อเชิงวรรณกรรมไว้เฉพาะในส่วนอธิบายแนวคิด หรือระบุว่าเป็นแนวขยายที่ไม่ได้บรรลุ และลบตาราง ตัวเลขหรือภาพที่อ้างว่าเป็นผลทดลองหากไม่มีขั้นตอนคำนวณและผลรันจริงรองรับ
+
+
+3. ทฤษฎีและกระบวนการทำงานของระบบ
+
+3.1 โครงสร้างระดับสูง
+
+งานระบบแบ่งเป็นชั้นดังต่อไปนี้
+
+1. Presentation: templates/portfolio/index.html และ static/portfolio/app.js
+2. View/API: portfolio/views.py และ portfolio/urls.py
+3. Data model: portfolio/models.py
+4. Domain calculation: portfolio/optimizer.py
+5. Reference data: portfolio/stocks.py
+6. Database/migration: SQLite และ portfolio/migrations/0001_initial.py
+7. External data: Yahoo Finance Chart API
+8. Test suite: portfolio/tests.py
+
+การแยกชั้นช่วยให้สูตรคำนวณ ทดสอบอิสระกับ Django และตัวจัดการงานคำนวณสามารถส่งผลกลับไปยังหน้าเว็บได้ผ่าน API
+
+3.2 โมเดลข้อมูลหุ้น
+
+StockReturn เป็นโมเดล Django ที่มีฟิลด์ symbol แบบ string สูงสุด 10 ตัวอักษรและ unique กับฟิลด์ annual_return แบบ FloatField ค่าเริ่มต้น 1.0 การตั้งค่า ordering = ["symbol"] ทำให้แถวข้อมูลเรียงตามสัญลักษณ์
+
+ฟังก์ชัน _ensure_stock_rows() ตรวจและสร้างแถวในฐานข้อมูลด้วย StockReturn.objects.get_or_create(symbol=symbol, defaults={"annual_return": DEFAULT_RETURNS[symbol]}) สำหรับหุ้นทั้ง 50 ตัว จึงไม่มีการสร้างฐานข้อมูลซ้ำหากแถวมีอยู่แล้ว
+
+3.3 รายชื่อและข้อมูลเริ่มต้นของหุ้น
+
+stocks.py มี SET50_STOCKS จำนวน 50 สัญลักษณ์ รายชื่อประกอบด้วย ADVANC, AOT, AWC, BANPU, BBL, BCH, BCP, BDMS, BEM, BGRIM, BH, BJC, BTS, CBG, CCET, CENTEL, COM7, CPALL, CPF, CPN, CRC, DELTA, EGCO, GULF, GPSC, HMPRO, IVL, KBANK, KKP, KTB, KTC, LH, MINT, MTC, OR, OSP, PTT, PTTEP, PTTGC, RATCH, SAWAD, SCB, SCC, SCGP, TCAP, TIDLOR, TISCO, TOP, TRUE และ WHA
+
+ค่าผลตอบแทนเริ่มต้นของหุ้น ADVANC, AOT, AWC, BANPU และ BBL ถูกกำหนดแตกต่างกัน โดย BCH และหุ้นอื่นที่ไม่อยู่ใน dictionary ใช้ค่า 1.0%
+
+ฟังก์ชัน yahoo_symbol() ตรวจว่าตัวอักษรอยู่ใน SET50_STOCKS แล้วต่อ .BK กลับไป ตัวอย่างเช่น ADVANC เป็น ADVANC.BK และ AOT เป็น AOT.BK ระบบไม่แปลงสัญลักษณ์เฉพาะรอบคิวโดยตรงตั้งแต่ชั้นฐานข้อมูล เพราะแยกเก็บสัญลักษณ์ตลาดหุ้นไทยไว้อย่างเรียบง่ายและใช้ conversion ฝั่งดึงข้อมูลเป็นอีกชั้นหนึ่ง
+
+3.4 สูตรแปลงผลตอบแทนรายปีเป็นรายเดือน
+
+ใน optimize_portfolio ผลตอบแทนพอร์ต P คำนวณเป็นเปอร์เซ็นต์ต่อปี ต่อมาจึงส่ง P เข้าฟังก์ชัน future_value_dca(monthly_payment, annual_return, months)
+
+อัตรารายเดือนคำนวณด้วย
+
+r_m = exp(ln(1 + R/100)/12) - 1
+
+ถ้า R = 0 ระบบคืน 0 จากสูตร monthly_return ได้ง่าย สำหรับ R = -100 ระบบไม่คำนวณ monthly return แต่มูลค่าอนาคตเป็น 0 ทันที
+
+สูตร Annuity Due ใช้
+
+FV = PMT × (((1 + r_m)^n - 1)/r_m) × (1 + r_m)
+
+โดยมีการตรวจ overflow และผลที่ไม่เป็น finite เพื่อป้องกัน Future Value เกินช่วงตัวเลข
+
+3.5 โครโมโซมและ normalization
+
+โครโมโซมแนะนำในระบบคือเวกเตอร์น้ำหนักค่าจริง เช่น [0.25, 0.35, 0.40] สำหรับหุ้น 3 ตัวแต่ละค่าถูกแปลงเป็นเปอร์เซ็นต์ในผลลัพธ์ เช่น [25,35,40]
+
+ฟังก์ชัน _normalize_weights() ดำเนินการดังนี้
+
+1. ถ้าไม่มีน้ำหนักให้เกิด ValueError
+2. เปลี่ยนค่าติดลบให้เป็น 0
+3. ถ้าค่ารวมใกล้ศูนย์สร้างน้ำหนักเท่ากัน
+4. ป้องกันค่าศูนย์ด้วย epsilon 1e-12
+5. ใช้ binary search หาตัวคูณ high สำหรับการปรับสเกล
+6. ใช้ min(w×factor, 0.60) เพื่อจำกัดน้ำหนักสูงสุด
+
+ข้อสังเกตคือ _normalize_weights() รองรับงานทั่วไปและมีเพดาน 60% ค่าตำแหน่งสุดท้ายในผลลัพธ์ยังถูกปรับเลขทศนิยมหนึ่งค่าเพื่อให้ผลรวมแสดงเป็น 100.00% ทุกครั้ง แม้ว่าค่าสูงสุดอาจน้อยกว่าหรือเท่ากับ 60% ตามขั้นตอน
+
+3.6 Tournament Selection
+
+ฟังก์ชัน _tournament_select() สุ่ม index ของประชากรแบบสุ่มโดยไม่คืนตัวซ้ำจำนวน tournament_size จากนั้นเลือกโครโมโซมที่มี Fitness มากที่สุด
+
+ส่วนหน้าตั้งค่าใช้ tournament_size = 3 แต่ _validate_ga_params() รองรับค่าระหว่าง 2 และ population_size
+
+3.7 SBX Crossover
+
+ฟังก์ชัน _sbx_crossover() ใช้สัญญาซ้อนตามคู่พ่อแม่ กรณีที่ค่ากลางเหมือนกันหรือค่าห่างน้อยกว่า epsilon ระบบจะคัดลอกค่าเดิม
+
+ในกรณีใช้งานจริงโค้ดคำนวณ beta และ alpha ตามพารามิเตอร์ eta_c จากนั้นสร้างลูกสองตัวและทำ normalization ใหม่ทั้งคู่
+
+3.8 Gaussian Mutation
+
+ฟังก์ชัน _mutate() วนทุกยีน ถ้าค่าสุ่มต่ำกว่า mutation_rate ระบบจะบวกค่าจาก Gaussian distribution ที่มีค่าเฉลี่ยศูนย์และเบี่ยงเบนมาตรฐาน mutation_sigma จากนั้น normalization ทำให้ยีนอยู่ในช่วงและผลรวม 100%
+
+หน้าเว็บกำหนดค่าเริ่มต้น mutation_sigma = 0.05 และ API สามารถรับค่าได้ระหว่าง 0–1 และจะแปลงเป็น float
+
+3.9 Elitism และ Fitness History
+
+การวนซ้ำแต่ละรุ่นประเมินประชากรแต่ละตัวบันทึกคำตอบที่ดีที่สุดในตัวแปร best_fitness และเพิ่มค่า Future Value สะสมเข้า fitness_history ในตอนเริ่มต้น next_population เป็น elite ของรุ่นปัจจุบันขนาด elite_size จากนั้นคัดเลือกพ่อแม่และสร้างลูกจนครบ population_size
+
+หลังครบ generations ระบบประเมินประชากรสุดท้ายอีกครั้งเพื่อป้องกันกรณีรุ่นสุดท้ายให้คำตอบดีกว่าเดิม หากดีที่สุดจะเพิ่มค่าสัมพันธ์ใน fitness_history อีกครั้ง จึงมีจำนวนสมาชิก generations + 1 ในกรณีปกติ
+
+
+4. วิธีดำเนินการวิจัย
+
+4.1 เครื่องมือและสภาพแวดล้อม
+
+โปรเจกต์พัฒนาด้วย Python, Django และ NumPy ตาม requirements.txt Django ต้องอยู่ในช่วง >=5.1,<6.0 และ NumPy >=2.0 ส่วนสเต็กเบราว์เซอร์ใช้ HTML5, CSS3, Tailwind CSS ผ่าน CDN, JavaScript Fetch API และ Chart.js
+
+การคำนวณ GA ไม่ได้นำ NumPy เข้ามาใช้ ตัวคำนวณใช้ math และ random จากไลบรารีมาตรฐานของ Python ทรัพยากรฐานข้อมูลเป็น SQLite ที่เก็บ db.sqlite3 ในโฟลเดอร์โครงการ
+
+4.2 สถาปัตยกรรมเว็บ
+
+หน้า index() render templates/portfolio/index.html มีฟอร์มรับหุ้นและเงินรายเดือน พอร์ตใช้ GET /api/stocks/ เพื่อโหลดหุ้นและผลตอบแทนจากฐานข้อมูล และใช้ POST /api/stocks/ เพื่อบันทึกผลตอบแทน
+
+การคำนวณใช้ POST /api/optimize/ โดยส่ง stocks, monthly_money และ ga_params API ตรวจข้อมูลก่อนสร้าง job แล้วคืน HTTP 202 พร้อม job_id หน้าเว็บทำ polling ไปที่ GET /api/optimize/<job_id>/ ทุกประมาณ 650 มิลลิวินาที จนสถานะเป็น completed หรือ failed
+
+4.3 API สำหรับดึงข้อมูล Yahoo
+
+POST /api/stocks/yahoo/ รับค่า symbols แบบอาร์เรย์ ถ้าไม่มี symbols ระบบตั้งเป็น SET50_STOCKS ทั้งหมด ข้อผิดพลาดของ ticker บางตัวจะถูกเก็บใน failed แต่ตัวที่ดึงสำเร็จจะเก็บใน updated
+
+การอ่าน Chart API ใช้ URL https://query1.finance.yahoo.com/v8/finance/chart/<ticker>?range=1y&interval=1d มี User-Agent และ timeout 10 วินาที ข้อมูลที่ใช้เป็น indicators.quote[0].close โดยกรองราคา None แล้วคำนวณ
+
+Annual Return = (Close_last/Close_first - 1) × 100
+
+ผลเป็น effective annual return แบบง่ายจากช่วงปีปัจจุบัน ไม่ได้คำนวณรายเดือนหรือใช้ logarithmic return และไม่ได้ปรับ dividend reinvestment
+
+4.4 การเก็บสถานะงาน
+
+JOBS เป็นตัวแปรระดับโมดูลและมี JOBS_LOCK สำหรับ lock ส่วนขณะที่ job ยังรันจะมี status="running", current_year และ completed_years เมื่อเสร็จจะมี status="completed", results และ stocks หากเกิดข้อผิดพลาด status="failed" และ error
+
+งานนี้เหมาะสำหรับ demo หรือ worker เดียว แต่ถ้าใช้หลาย process state จะอาจขาดความต่อเนื่องระหว่าง process และต้องส่ง job ไปยัง Celery หรือระบบคิวและฐานข้อมูลสถานะร่วมในการใช้งานจริง
+
+4.5 การเตรียมข้อมูลทดสอบ
+
+ชุดทดสอบมี 14 รายการสำหรับ 9 รายการใน PortfolioOptimizerTests และ 5 รายการใน StockApiTests
+
+รายการทดสอบครอบคลุม
+
+1. ผลตอบแทนศูนย์ให้ PMT×n
+2. ผลตอบแทนบวกใช้สูตร annuity due
+3. annuity due มากกว่า ordinary annuity
+4. ผลขาดทุนทั้งหมดคืนศูนย์
+5. weight ผลลัพธ์รวม 100% และอยู่ในช่วง
+6. FV ตรงกับสูตรอนุกรมและผลตอบแทนพอร์ต
+7. Fitness History มีจำนวนครบและไม่ลดลง
+8. ผล GA ทำซ้ำได้เมื่อ seed เท่ากัน
+9. missing annual return ถูกปฏิเสธ
+10. invalid GA parameter ถูกปฏิเสธ
+11. invalid DCA input ถูกปฏิเสธ
+12. GET stocks คืน 50 หุ้นและสร้าง StockReturn ครบ
+13. POST stocks สามารถบันทึกผลตอบแทน
+14. POST stocks ปฏิเสธสัญลักษณ์นอก列表
+15. POST optimize ส่งงานและคืน 202
+16. payload optimize ที่ไม่ใช่ object ถูกปฏิเสธ
+
+จำนวนข้อทดสอบอาจเปลี่ยนเป็น 14 จากการนับ class หรือรูปแบบ Django runner ให้ยืนยันผลด้วยคำสั่งจริงก่อนรายงาน
+
+4.6 เงื่อนไขพารามิเตอร์ GA
+
+พารามิเตอร์เริ่มต้นใน _validate_ga_params() คือ
+
+- population_size = 60
+- generations = 100
+- crossover_prob = 0.90
+- mutation_rate = 0.10
+- mutation_sigma = 0.05
+- eta_c = 20.0
+- tournament_size = 3
+- elite_size = 2
+- seed = None
+
+ช่วงที่อนุญาตคือ population 4–500, generations 1–1,000, tournament 2–population size, elite 1–population size-1 และ seed จำนวนเต็มหรือ null ค่า crossover_prob, mutation_rate อยู่ช่วง 0–1; mutation_sigma 0–1; eta_c 1–100
+
+4.7 ความถูกต้องและการทำซ้ำ
+
+การตั้ง seed ด้วย random.Random(seed) สร้าง generator อิสระสำหรับงานหนึ่งชุด เพราะ Python random ไม่มีการแตกต่างจาก library GA สร้างกลุ่ม population ทีละรุ่นด้วย seed เดียวกันดังนั้น results ของ weights และ fitness_history ต้องเท่ากันหากโค้ดและเวอร์ชัน Python ไม่เปลี่ยน
+
+การทำซ้ำนี้เป็น reproducibility บนข้อมูลและพารามิเตอร์ไม่ใช่ guarantee ของ analytical optimality ถ้า seed ไม่ถูกกำหนดระบบจะได้ค่าตามสุ่มในแต่ละรอบ
+
+
+5. ผลการพัฒนาและการทดสอบ
+
+5.1 ประสิทธิภาพและผลที่ตรวจสอบได้จากโค้ด
+
+โค้ดรองรับการคำนวณสูงสุดสามรูปแบบระยะเวลา พร้อมสร้างผลลัพธ์โดยไม่จำเป็นต้องรัน library ภายนอก ในการวิเคราะห์สมรรถนะควรวัดเวลาการทำงานจริงโดย clock wall time จากเครื่องที่ใช้สาธิต และควรระบุ Python/Django, OS, CPU และค่า seed ด้วย
+
+หัวข้อดังต่อไปนี้เป็นรายการตรวจสอบจากโค้ดเท่านั้น ยังไม่ใช่ผลตัวเลข
+
+- สูตร r_m ผ่านกรณี effective annual 12% และ 12 เดือน
+- มูลค่าอนาคต annuity due ถูกทดสอบเทียบ ordinary annuity
+- ผลขาดทุน 100% คืนศูนย์
+- ผลลัพธ์ weight รวม 100%
+- weight ทุกตัวอยู่ในช่วง
+- fitness_history มีจำนวน generations+1 และไม่ลดลง
+- seed ทำให้ผลซ้ำได้
+- payload ผิดรูปแบบและหุ้นนอก 50 ตัวถูกปฏิเสธ
+
+5.2 ผลการทดสอบ Django
+
+ชุดทดสอบถูกระบุไว้ใน portfolio/tests.py จำนวน 14 รายการตามการนับเมธอดในไฟล์ แต่สถานะผ่านหรือไม่ผ่านต้องรายงานจากการรันจริง คำสั่งทดสอบคือ
+
+python manage.py test portfolio
+
+บทความควรบอกว่ารันบนสภาพแวดล้อมใด วิธีติดตั้ง Django และผลลัพธ์ตัวอย่าง เช่น
+
+- Ran 14 tests in X seconds
+- OK
+
+หากเกิด error ในสภาพแวดล้อมจริงให้รายงานชื่อเทสต์ วันเวลารัน และสาเหตุ
+
+5.3 ผลการคำนวณตัวอย่าง
+
+ตัวเลขตัวอย่างไม่ได้เกิดจากการวัดจริงจนกว่าจะได้รับผลรันตารางควรมีคอลัมน์ดังต่อไปนี้
+
+- จำนวนหุ้นที่เลือก
+- ผลตอบแทนรายปีแต่ละตัว
+- population
+- generations
+- seed
+- ผล weight
+- portfolio annual return
+- เงินลงทุนต่อเดือน
+- เงินต้น
+- Future Value
+- กำไร
+- elapsed time
+
+ตัวเลขในบท PDF ที่อ้างสมัยใช้ เช่น 692,165.94 บาท 663,347.30 บาท หรือ 1,501,800 บาท ไม่ได้มีโค้ดตัวเปรียบเทียบและข้อมูลเริ่มต้นใน repository ปัจจุบันที่ยืนยันได้ครบถ้วน จึงไม่ควรรวมไว้เป็นผลการทดลองของระบบนี้
+
+5.4 เวลาประมวลผล
+
+เวลาประมวลผลจริงไม่ควรรายงานโดยอ้างค่าประมาณในบทความ ให้วัดจากเครื่อง demo ด้วยคำสั่งรันจริง ตัวอย่างการรัน ได้แก่
+
+python manage.py migrate
+python manage.py runserver
+
+เมื่อเข้าสู่หน้าเว็บและกดคำนวณบันทึกเวลาของการเริ่มรันจน job completed สำหรับ population 60 generation 100 ในกรณี 5 และ 10 หุ้นและระยะ 1,5,10 ปี
+
+5.5 ข้อจำกัดของผล
+
+ผลคำนวณมีข้อจำกัดดังนี้
+
+1. ผลตอบแทนหุ้นเป็นสมมติฐานคงที่ ไม่รองรับความผันผวนรายงวด
+2. รายชื่อหุ้นเป็น 50 ตัวคงที่ ไม่รับประกัน SET50 ของรอบปัจจุบัน
+3. Yahoo integration เป็นรายปี 1 ปีจากราคาปิด ไม่ใช่ backtest 3 ปีหรือผลจริงย้อนหลังทุกงวด
+4. ไม่มี risk metric, covariance, Sharpe Ratio และ MVO
+5. ไม่มีภาษี ค่าธรรมเนียมสลิปหรือ dividend reinvestment
+6. ผลที่ดึงจาก Yahoo อาจขึ้นกับ availability, throttling และตัวแปรของตลาด
+7. GA แบบ stochastic ต้องระบุ seed ถ้าต้องการทำซ้ำ
+8. การประมาณค่าบนฐานข้อมูล SQLite เกี่ยวกับผู้ใช้คนเดียวและ demo process ไม่ใช่ production scaling
+9. ผลที่แนะนำไม่มีพฤติกรรมราคาและอาจนำไปสู่การลงทุนที่ไม่คำนึงความเสี่ยง จึงต้องแสดงข้อจำกัดการใช้งาน
+
+
+6. แนวทางการประเมินที่ควรทำต่อ
+
+6.1 การทดสอบการลู่เข้าสู่คำตอบ
+
+สามารถสร้าง unit test หรือ script สำหรับกรณีที่ผลตอบแทนพอร์ตเป็นเชิงเส้นและมีหุ้นที่มีผลตอบแทนสูงสุด เช่น หุ้น A เท่ากับ 12%, หุ้น B เท่ากับ 5% และกำหนด weight max 60% ตามนัยโค้ดปัจจุบันถ้าสองหุ้นผลตอบแทนพอร์ตสูงสุดควรเป็น A 60% และ B 40% การรันหลาย seed และบันทึกความแม่นยำจะช่วยแสดงความลู่เข้าโดยไม่อ้างตัวเลขปัจจุบัน
+
+6.2 การทดสอบสถานการณ์ A–D
+
+สถานการณ์ควรกำหนดพร้อมรันใหม่และบันทึกผล
+
+- สถานการณ์ A: 2 หุ้น ผลตอบแทนสูงและต่ำกำหนด seed เดียว
+- สถานการณ์ B: 5 หุ้นหลายผลตอบแทนและ seed หลายค่า
+- สถานการณ์ C: 10 หุ้นและเงื่อนไข population/generations ปกติ
+- สถานการณ์ D: 50 หุ้นและกำหนดผลตอบแทน 1.0% หรือ Yahoo 1 ปี
+
+รายงานต้องระบุจำนวน population, generations, seed, PMT, months และเวลารัน ไม่ควรรายงานผลว่าลู่เข้าเหมือนต้นฉบับถ้ายังไม่รัน
+
+6.3 การเพิ่มผลตอบแทนจริงด้วย Yahoo
+
+หากเพิ่มฟังก์ชันเรียก Yahoo ให้บันทึก timestamp, ช่วงราคา, จำนวนค่า close ที่ใช้ และความล้มเหลวต่อหุ้น เช่นข้อมูลภายในช่วง 1 ปีอาจไม่มี 252 วันเนื่องจากวันหยุดหรือ missing ควรเก็บสัญลักษณ์หุ้นที่ใช้จริงเพื่อป้องกันการกล่าวว่าเป็นข้อมูลสมาชิก SET50 ล่าสุด
+
+การคำนวณอาจปรับเป็น annualized return ถ้ามีราคาปิดมากกว่า 1 ปีโดยใช้ (Close_last/Close_first)^(252/trading_days)-1 และปรับ dividend/ดัชนีอย่างถูกหลัก แต่โค้ดปัจจุบันยังไม่ได้ทำการคำนวณนี้
+
+6.4 การเพิ่ม risk measure
+
+หากต้องการคำนวณ Sharpe Ratio ระบบต้องเพิ่ม daily or monthly historical data, mean annual return, covariance matrix, risk-free rate และฟังก์ชัน fitness ใหม่ ควรเขียนและทดสอบให้ครบก่อนเปลี่ยนเนื้อหาในบทความ หัวข้อนี้ไม่ควรผสมกับ Fitness แบบ Future Value ปัจจุบันเพราะเป็นวัตถุประสงค์คนละประเภท
+
+
+7. สรุปผล
+
+งานวิจัยนี้พัฒนาระบบเว็บ Smart DCA ที่ใช้ GA ในการจัดสัดส่วนการลงทุนรายเดือนให้หุ้นในรายการที่กำหนด โมเดลพื้นฐานรองรับโครโมโซมค่าจริง น้ำหนักรวม 100% เพดานน้ำหนัก 60% การคัดเลือกด้วย tournament SBX crossover Gaussian mutation และ elitism ระบบคำนวณ DCA แบบลงทุนต้นงวดโดยใช้ effective annual return คงที่และสร้างผลสำหรับระยะ 1,5,10 ปี
+
+ระบบเชื่อมต่อ Django API SQLite และหน้าเว็บ Chart.js สามารถแก้ผลตอบแทนและดึงข้อมูลปิดจาก Yahoo Finance โดยแปลงสัญลักษณ์เป็น SYMBOL.BK มีชุดทดสอบ 14 รายการสำหรับสูตรคำนวณ การจำกัดข้อมูลพารามิเตอร์ และ API ตามโค้ดปัจจุบัน
+
+ผลลัพธ์เชิงตัวเลขที่ควรสรุปคือผลที่วัดจริงพร้อม seed และพารามิเตอร์ ไม่ควรรายงาน Sharpe, MVO หรือผล backtest 3 ปีจนกว่าจะเพิ่มโค้ดที่คำนวณและทดสอบจริง
+
+ข้อจำกัดสำคัญคือผลตอบแทนเป็นสมมติฐานคงที่ รายชื่อหุ้นไม่ตรวจสมาชิก SET50 ล่าสุด และสถานะงานเก็บในหน่วยความจำ การใช้งานพอร์ตที่ได้ควรอธิบายว่าเป็นการจำลองเพื่อศึกษาวิธีจัดสรร ไม่ใช่คำแนะนำการลงทุนหรือการันตีผลในอนาคต
+
+
+คำชี้แจ้งการใช้ AI
+
+ต้นฉบับและเนื้อหาบทความมีการใช้เครื่องมือปัญญาประดิษฐ์ช่วยปรับภาษา จัดโครงสร้าง วิเคราะห์โค้ด และสร้างร่างเนื้อหา ผู้เขียนได้ตรวจสอบเนื้อหาเทียบโค้ด แต่ควรตรวจเนื้อหาต่อว่าไม่สร้างอ้างอิงที่ไม่ถูกต้องหรือระบุผลทดลองที่ยังไม่รันโดยอัตโนมัติ ก่อนส่งเอกสารให้ตรวจชื่อผู้แต่ง ชื่อการประชุม ปีประชุม รูปแบบอ้างอิง และอีเมลผู้ประสานงานกับประกาศฉบับล่าสุด
+
+
+เอกสารอ้างอิง
+
+[1] ตลาดหลักทรัพย์แห่งประเทศไทย, “ข้อมูลดัชนี SET50 และแนวทางการคัดเลือก,” เว็บไซต์ตลาดหลักทรัพย์แห่งประเทศไทย, https://www.set.or.th
+
+[2] J. H. Holland, Adaptation in Natural and Artificial Systems: An Introductory Analysis with Applications to Biology, Control, and Artificial Intelligence, University of Michigan Press, 1975.
+
+[3] D. E. Goldberg, Genetic Algorithms in Search, Optimization, and Machine Learning, Addison-Wesley, 1989.
+
+[4] H. Markowitz, “Portfolio Selection,” The Journal of Finance, vol. 7, no. 1, pp. 77–91, 1952.
+
+[5] D. J. Shyu and J. Y. Chen, “Portfolio optimization using genetic algorithms,” Applied Soft Computing, 2009. ตรวจชื่อผู้แต่ง ปี และรายละเอียดวารสารก่อนใช้จริง
+
+[6] Django Software Foundation, Django 5.2 Documentation, https://docs.djangoproject.com/
+
+[7] Yahoo, Yahoo Finance Chart API Documentation, https://query1.finance.yahoo.com/
+
+[8] K. Deb, A. Pratap, S. Agarwal and T. Meyarivan, “A Fast and Elitist Multiobjective Genetic Algorithm: NSGA-II,” IEEE Transactions on Evolutionary Computation, vol. 6, no. 2, pp. 182–197, 2002.
+
+
+หมายเหตุสำหรับผู้จัดทำ (ลบออกก่อนส่ง)
+
+1. ไม่ใส่ชื่อผู้แต่งตามข้อกำหนดต้นฉบับจนกว่าจะได้รับข้อมูลผู้เขียนจริง
+2. รันคำสั่ง python manage.py test portfolio และแก้หัวข้อ 5.2 ตามผลจริง
+3. รันสถานการณ์ A–D คำนวณซ้ำพร้อมบันทึก seed, population, generations, monthly payment และ elapsed time
+4. ตรวจระบบ Yahoo Finance หลังรันจริง เนื่องจากช่วงราคาและรายชื่ออาจมีข้อจำกัดเครือข่าย
+5. รายงานการประมวลผลจริงและข้อมูลสภาพแวดล้อมก่อนส่ง
+6. ตรวจปีการประชุม ชื่อการประชุม รูปแบบอ้างอิง อีเมลผู้ประสานงานและชื่อผู้จัด
+7. รายชื่อใน stocks.py เป็นรายการคงที่ ไม่ควรเขียนว่าเป็นสมาชิก SET50 ล่าสุดเว้นแต่ตรวจแหล่งทางการล่าสุด
+8. หลีกเลี่ยงข้อมูล MVO, Sharpe Ratio, backtest 3 ปี หรือค่าตัวเลขที่ไม่มีโค้ดและผลรันยืนยัน

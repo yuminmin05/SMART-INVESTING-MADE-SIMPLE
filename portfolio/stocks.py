@@ -21,3 +21,10 @@ DEFAULT_RETURNS = {
     "BBL": 2.9094,
 }
 DEFAULT_RETURNS.update({symbol: 1.0 for symbol in SET50_STOCKS if symbol not in DEFAULT_RETURNS})
+
+
+def yahoo_symbol(symbol):
+    """แปลงสัญลักษณ์ภายในระบบเป็นสัญลักษณ์หุ้น SET ที่ Yahoo Finance ใช้"""
+    if symbol not in SET50_STOCKS:
+        raise ValueError(f"ไม่พบสัญลักษณ์หุ้น: {symbol}")
+    return f"{symbol}.BK"

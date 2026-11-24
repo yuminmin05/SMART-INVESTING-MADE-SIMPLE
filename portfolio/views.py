@@ -3,6 +3,9 @@ import json
 import math
 import threading
 import uuid
+import urllib.parse
+import urllib.request
+import urllib.error
 
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -10,7 +13,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .optimizer import optimize_portfolio, _validate_ga_params
 from .models import StockReturn
-from .stocks import DEFAULT_RETURNS, SET50_STOCKS
+from .stocks import DEFAULT_RETURNS, SET50_STOCKS, yahoo_symbol
 
 YEARS = (1, 5, 10)
 JOBS = {}
@@ -63,6 +66,59 @@ def save_stock_returns_api(request):
     for symbol, value in validated.items():
         StockReturn.objects.filter(symbol=symbol).update(annual_return=value)
     return JsonResponse({"message": "บันทึกผลตอบแทนเรียบร้อย", "updated": len(validated)})
+
+
+@require_POST
+def update_stock_returns_from_yahoo(request):
+    """อัปเดต effective annual return จากราคาปิด Yahoo Finance ระหว่างช่วง 1 ปี"""
+    try:
+        payload = json.loads(request.body)
+        symbols = payload.get("symbols") if isinstance(payload, dict) else None
+        if symbols is None:
+            symbols = SET50_STOCKS
+        if not isinstance(symbols, list) or not symbols:
+            raise ValueError("กรุณาระบุรายการหุ้น")
+        normalized = [symbol.strip().upper() for symbol in symbols]
+        if any(symbol not in SET50_STOCKS for symbol in normalized):
+            raise ValueError("พบสัญลักษณ์หุ้นที่ไม่อยู่ใน SET50")
+    except (json.JSONDecodeError, AttributeError, ValueError) as error:
+        return JsonResponse({"error": str(error)}, status=400)
+
+    updated = {}
+    failed = []
+    for symbol in normalized:
+        chart_url = (
+            "https://query1.finance.yahoo.com/v8/finance/chart/"
+            f"{urllib.parse.quote(yahoo_symbol(symbol))}"
+            "?range=1y&interval=1d"
+        )
+        try:
+            request_headers = {"User-Agent": "Mozilla/5.0"}
+            yahoo_request = urllib.request.Request(chart_url, headers=request_headers)
+            with urllib.request.urlopen(yahoo_request, timeout=10) as response:
+                chart = json.loads(response.read().decode("utf-8"))
+            result = chart["chart"]["result"][0]
+            closes = result["indicators"]["quote"][0]["close"]
+            prices = [float(price) for price in closes if price is not None]
+            if len(prices) < 2:
+                raise ValueError("ไม่มีข้อมูลราคาเพียงพอ")
+            annual_return = ((prices[-1] / prices[0]) - 1.0) * 100.0
+            if not math.isfinite(annual_return) or annual_return < -100 or annual_return > 1000:
+                raise ValueError("ผลตอบแทนไม่อยู่ในช่วงที่ระบบรองรับ")
+            updated[symbol] = round(annual_return, 4)
+        except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError, urllib.error.URLError, TimeoutError):
+            failed.append(symbol)
+
+    if updated:
+        _ensure_stock_rows()
+        for symbol, value in updated.items():
+            StockReturn.objects.filter(symbol=symbol).update(annual_return=value)
+
+    return JsonResponse({
+        "message": f"อัปเดตแล้ว {len(updated)} จาก {len(normalized)} หุ้น",
+        "updated": updated,
+        "failed": failed,
+    })
 
 
 def stocks_api_dispatch(request):
